@@ -1,0 +1,134 @@
+School Year,Program ID,Program Name,Number of Enrollees,Number of Dropout,Number of Graduates
+2012-2013,1,Bachelor of Science in Information Technology (BSIT),325,0,0
+2013-2014,1,Bachelor of Science in Information Technology (BSIT),527,0,11
+2014-2015,1,Bachelor of Science in Information Technology (BSIT),596,0,26
+2015-2016,1,Bachelor of Science in Information Technology (BSIT),1000,0,25
+2016-2017,1,Bachelor of Science in Information Technology (BSIT),774,0,39
+2017-2018,1,Bachelor of Science in Information Technology (BSIT),716,0,79
+2018-2019,1,Bachelor of Science in Information Technology (BSIT),837,52,104
+2019-2020,1,Bachelor of Science in Information Technology (BSIT),1294,93,34
+2020-2021,1,Bachelor of Science in Information Technology (BSIT),1688,142,68
+2021-2022,1,Bachelor of Science in Information Technology (BSIT),1449,80,70
+2022-2023,1,Bachelor of Science in Information Technology (BSIT),1292,67,184
+2012-2013,2,Bachelor of Science in Accountancy (BSA),601,0,41
+2013-2014,2,Bachelor of Science in Accountancy (BSA),581,0,33
+2014-2015,2,Bachelor of Science in Accountancy (BSA),370,0,51
+2015-2016,2,Bachelor of Science in Accountancy (BSA),327,0,25
+2016-2017,2,Bachelor of Science in Accountancy (BSA),185,0,36
+2017-2018,2,Bachelor of Science in Accountancy (BSA),126,0,12
+2018-2019,2,Bachelor of Science in Accountancy (BSA),337,12,29
+2019-2020,2,Bachelor of Science in Accountancy (BSA),474,23,18
+2020-2021,2,Bachelor of Science in Accountancy (BSA),778,35,0
+2021-2022,2,Bachelor of Science in Accountancy (BSA),962,35,68
+2022-2023,2,Bachelor of Science in Accountancy (BSA),645,36,100
+2012-2013,3,Bachelor of Science in Entrepreneurship (BSE),427,0,20
+2013-2014,3,Bachelor of Science in Entrepreneurship (BSE),571,0,25
+2014-2015,3,Bachelor of Science in Entrepreneurship (BSE),739,0,34
+2015-2016,3,Bachelor of Science in Entrepreneurship (BSE),899,0,38
+2016-2017,3,Bachelor of Science in Entrepreneurship (BSE),827,0,85
+2017-2018,3,Bachelor of Science in Entrepreneurship (BSE),628,0,92
+2018-2019,3,Bachelor of Science in Entrepreneurship (BSE),627,40,102
+2019-2020,3,Bachelor of Science in Entrepreneurship (BSE),924,87,41
+2020-2021,3,Bachelor of Science in Entrepreneurship (BSE),1308,131,32
+2021-2022,3,Bachelor of Science in Entrepreneurship (BSE),1222,93,104
+2022-2023,3,Bachelor of Science in Entrepreneurship (BSE),1200,30,186
+2012-2013,4,Bachelor of Science in Computer Science (BSCS),310,0,16
+2013-2014,4,Bachelor of Science in Computer Science (BSCS),400,0,12
+2014-2015,4,Bachelor of Science in Computer Science (BSCS),427,0,20
+2015-2016,4,Bachelor of Science in Computer Science (BSCS),455,0,19
+2016-2017,4,Bachelor of Science in Computer Science (BSCS),331,0,28
+2017-2018,4,Bachelor of Science in Computer Science (BSCS),220,0,38
+2018-2019,4,Bachelor of Science in Computer Science (BSCS),204,12,29
+2019-2020,4,Bachelor of Science in Computer Science (BSCS),229,23,19
+2020-2021,4,Bachelor of Science in Computer Science (BSCS),391,49,1
+2021-2022,4,Bachelor of Science in Computer Science (BSCS),415,23,22
+2022-2023,4,Bachelor of Science in Computer Science (BSCS),437,13,34
+2012-2013,5,Bachelor of Science in Mechanical Engineering (BSME),256,0,10
+2013-2014,5,Bachelor of Science in Mechanical Engineering (BSME),343,0,12
+2014-2015,5,Bachelor of Science in Mechanical Engineering (BSME),484,0,12
+2015-2016,5,Bachelor of Science in Mechanical Engineering (BSME),616,0,12
+2016-2017,5,Bachelor of Science in Mechanical Engineering (BSME),609,0,23
+2017-2018,5,Bachelor of Science in Mechanical Engineering (BSME),496,0,43
+2018-2019,5,Bachelor of Science in Mechanical Engineering (BSME),812,52,31
+2019-2020,5,Bachelor of Science in Mechanical Engineering (BSME),820,33,44
+2020-2021,5,Bachelor of Science in Mechanical Engineering (BSME),698,47,33
+2021-2022,5,Bachelor of Science in Mechanical Engineering (BSME),1113,34,36
+2022-2023,5,Bachelor of Science in Mechanical Engineering (BSME),947,40,80
+2012-2013,6,Bachelor of Arts in Communication (BAC),240,0,10
+2013-2014,6,Bachelor of Arts in Communication (BAC),374,0,14
+2014-2015,6,Bachelor of Arts in Communication (BAC),490,0,20
+2015-2016,6,Bachelor of Arts in Communication (BAC),533,0,20
+2016-2017,6,Bachelor of Arts in Communication (BAC),447,0,65
+2017-2018,6,Bachelor of Arts in Communication (BAC),284,0,50
+2018-2019,6,Bachelor of Arts in Communication (BAC),288,15,32
+2019-2020,6,Bachelor of Arts in Communication (BAC),397,36,27
+2020-2021,6,Bachelor of Arts in Communication (BAC),586,31,5
+2021-2022,6,Bachelor of Arts in Communication (BAC),588,24,35
+2022-2023,6,Bachelor of Arts in Communication (BAC),574,19,71
+2012-2013,7,Bachelor of Elementary Education,278,0,7
+2013-2014,7,Bachelor of Elementary Education,270,0,8
+2014-2015,7,Bachelor of Elementary Education,399,0,20
+2015-2016,7,Bachelor of Elementary Education,492,0,31
+2016-2017,7,Bachelor of Elementary Education,470,0,46
+2017-2018,7,Bachelor of Elementary Education,410,0,73
+2018-2019,7,Bachelor of Elementary Education,415,8,72
+2019-2020,7,Bachelor of Elementary Education,416,10,30
+2020-2021,7,Bachelor of Elementary Education,488,17,37
+2021-2022,7,Bachelor of Elementary Education,500,9,38
+2022-2023,7,Bachelor of Elementary Education,434,3,63
+2012-2013,8,Bachelor of Secondary Education English,353,0,11
+2013-2014,8,Bachelor of Secondary Education English,350,0,15
+2014-2015,8,Bachelor of Secondary Education English,330,0,29
+2015-2016,8,Bachelor of Secondary Education English,280,0,43
+2016-2017,8,Bachelor of Secondary Education English,142,0,19
+2017-2018,8,Bachelor of Secondary Education English,105,0,29
+2018-2019,8,Bachelor of Secondary Education English,131,9,24
+2019-2020,8,Bachelor of Secondary Education English,144,10,3
+2020-2021,8,Bachelor of Secondary Education English,330,12,0
+2021-2022,8,Bachelor of Secondary Education English,421,20,18
+2022-2023,8,Bachelor of Secondary Education English,368,5,40
+2012-2013,9,Bachelor of Secondary Education Mathematics,120,0,0
+2013-2014,9,Bachelor of Secondary Education Mathematics,107,0,8
+2014-2015,9,Bachelor of Secondary Education Mathematics,140,0,4
+2015-2016,9,Bachelor of Secondary Education Mathematics,182,0,17
+2016-2017,9,Bachelor of Secondary Education Mathematics,84,0,13
+2017-2018,9,Bachelor of Secondary Education Mathematics,58,0,14
+2018-2019,9,Bachelor of Secondary Education Mathematics,83,4,14
+2019-2020,9,Bachelor of Secondary Education Mathematics,56,5,1
+2020-2021,9,Bachelor of Secondary Education Mathematics,108,10,0
+2021-2022,9,Bachelor of Secondary Education Mathematics,182,16,9
+2022-2023,9,Bachelor of Secondary Education Mathematics,146,0,9
+2018-2019,10,Bachelor of Secondary Education Science,38,6,0
+2019-2020,10,Bachelor of Secondary Education Science,90,8,0
+2020-2021,10,Bachelor of Secondary Education Science,166,6,0
+2021-2022,10,Bachelor of Secondary Education Science,250,20,13
+2022-2023,10,Bachelor of Secondary Education Science,196,2,18
+2016-2017,11,Bachelor of Secondary Education SAPT,21,0,0
+2017-2018,11,Bachelor of Secondary Education SAPT,35,0,0
+2018-2019,11,Bachelor of Secondary Education SAPT,49,0,0
+2019-2020,11,Bachelor of Secondary Education SAPT,72,0,0
+2020-2021,11,Bachelor of Secondary Education SAPT,36,0,0
+2021-2022,11,Bachelor of Secondary Education SAPT,32,0,0
+2022-2023,11,Bachelor of Secondary Education SAPT,27,0,0
+2015-2016,12,Bachelor of Science in Tourism Management (BSTM),174,0,0
+2016-2017,12,Bachelor of Science in Tourism Management (BSTM),164,0,0
+2017-2018,12,Bachelor of Science in Tourism Management (BSTM),136,0,0
+2018-2019,12,Bachelor of Science in Tourism Management (BSTM),250,21,26
+2019-2020,12,Bachelor of Science in Tourism Management (BSTM),403,39,27
+2020-2021,12,Bachelor of Science in Tourism Management (BSTM),870,72,1
+2021-2022,12,Bachelor of Science in Tourism Management (BSTM),891,25,45
+2022-2023,12,Bachelor of Science in Tourism Management (BSTM),817,26,77
+2015-2016,13,Diploma in Midwifery (MID),45,0,0
+2016-2017,13,Diploma in Midwifery (MID),41,0,3
+2017-2018,13,Diploma in Midwifery (MID),59,0,7
+2018-2019,13,Diploma in Midwifery (MID),99,15,14
+2019-2020,13,Diploma in Midwifery (MID),75,10,0
+2020-2021,13,Diploma in Midwifery (MID),170,25,0
+2021-2022,13,Diploma in Midwifery (MID),196,26,0
+2022-2023,13,Diploma in Midwifery (MID),295,12,34
+2018-2019,14,Bachelor of Science in Accounting Information System (BSAIS),86,6,0
+2019-2020,14,Bachelor of Science in Accounting Information System (BSAIS),283,7,0
+2020-2021,14,Bachelor of Science in Accounting Information System (BSAIS),650,12,0
+2021-2022,14,Bachelor of Science in Accounting Information System (BSAIS),736,18,34
+2022-2023,14,Bachelor of Science in Accounting Information System (BSAIS),885,25,107
+2022-2023,15,Bachelor of Arts in Psychology (BA Psy),92,8,0
