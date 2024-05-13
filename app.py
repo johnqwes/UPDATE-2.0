@@ -346,7 +346,7 @@ def sidebar_bg(side_bg):
     except Exception as e:
         st.error(f"Error: {e}")
     
-side_bg = "static/image1.JPG"
+side_bg = "static/image2.JPG"
 sidebar_bg(side_bg)
     
 # Function to send a password reset email
