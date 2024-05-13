@@ -292,6 +292,10 @@ auth = firebase.auth()
 db = firebase.database()
 
 def authenticate(email, password):
+    if not email.strip() or not password.strip():
+        st.error("Please enter both email and password.")
+        return None
+
     try:
         # Check if the email is in declined accounts
         declined_accounts = db.child("declined_accounts").get().val()
@@ -313,9 +317,10 @@ def authenticate(email, password):
     except Exception as e:
         error_message = str(e)
         if "INVALID_PASSWORD" in error_message or "INVALID_EMAIL" in error_message:
-            st.error("Invalid email or password.")
+            st.toast("Invalid email or password.")
         return None
-    
+        
+
     
 def sidebar_bg(side_bg):
     try:
@@ -341,7 +346,7 @@ def sidebar_bg(side_bg):
     except Exception as e:
         st.error(f"Error: {e}")
     
-side_bg = "static/image1.jpg"
+side_bg = "static/image2.jpg"
 sidebar_bg(side_bg)
     
 # Function to send a password reset email
@@ -372,7 +377,7 @@ def signup(email, password):
     try:
         # Store user details in pending sign-up requests
         db.child("pending_signups").child(email.replace(".", ",")).set({"email": email, "password": password})
-        st.success("Sign up successful. Please wait for admin approval.")
+        st.toast("Sign up successful. Please wait for admin approval.")
     except Exception as e:
         st.error(f"Error signing up: {e}")
 
@@ -526,96 +531,115 @@ def logout():
     # Clear user info from session state
     st.session_state.user = None
 
-# Streamlit app content
+def login_callback(email, password):
+    if not email or not password:
+        st.toast("Email or password cannot be empty.")
+        return
+    
+    user = authenticate(email, password)
+    if user:
+        st.session_state.user = user
+        st.success("Login successful.")
+        time.sleep(1)
+    else:
+        st.toast("Invalid email or password.")
+
 def main():
-     
-     background_image_path = "static/image.jpg"  # Adjust the path accordingly
-     set_background(background_image_path)
+    background_image_path = "static/image.jpg"  # Adjust the path accordingly
+    set_background(background_image_path)
 
     # Create a session state object
-     if 'user' not in st.session_state:
+    if 'user' not in st.session_state:
         st.session_state.user = None
 
-     if st.session_state.user is None:
+    if st.session_state.user is None:
         st.markdown("<h1 style=' color: #545454;'>LOGIN</h1>", unsafe_allow_html=True)
 
         st.markdown(
-        """
-        <style>
-        .st-emotion-cache-q8sbsg p {
-            color: black;
-        }
-        .st-emotion-cache-16idsys p{
-            color: #545454;
-        }
-        button.st-emotion-cache-hc3laj.ef3psqc12 {
-            background-color: #2ECC71;
-            position: relative;
-            border: 1px solid black;
-            margin: 0;
-            color: #fff;
-            display: inline-block;
-            text-decoration: none;
-            text-align: center;
-        }
-        .st-b2 {
-        background-color: white;
-        }
+            """
+            <style>
+            .st-emotion-cache-q8sbsg p {
+                color: black;
+            }
+            .st-emotion-cache-16idsys p{
+                color: #545454;
+            }
+            button.st-emotion-cache-hc3laj.ef3psqc12 {
+                background-color: #2ECC71;
+                position: relative;
+                border: 1px solid black;
+                margin: 0;
+                color: #fff;
+                display: inline-block;
+                text-decoration: none;
+                text-align: center;
+            }
+            .st-b2 {
+            background-color: white;
+            }
             button.st-emotion-cache-13ejsyy.ef3psqc12{
-            background-color: #2f9e36;
-            color: #fff;
-            transition: 0.2s;
-            height: 2.5rem;
-        }
-        div.st-emotion-cache-1wmy9hl.e1f1d6gn0{
-            width: 325px;
-            height: 470px;
-            background-color: #f0f0f0;
-            border: 1px solid #ccc;
-            margin: 20px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-            left: 30px;
-            border: 3px solid #73AD21;
-            border-radius: 2rem;
-            margin-top: 90px;
-        }
-        .st-bo{
-            width: 300px;
-        }
-        .st-emotion-cache-10trblm{
-            font-size: 25px;
-            text-align: center;
-            margin-right: 20px;
-        }
-        .st-emotion-cache-1vbkxwb p{
-            font-size: 12px;
-            text-align: center;
-        }
-        button.st-emotion-cache-7ym5gk.ef3psqc12{
-           
-            height: 1px;
-        }
-        .st-gw{
-            height: auto;
-            width: 300px;
-        }
-        .st-h9{
-            
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+                background-color: #2f9e36;
+                color: #fff;
+                transition: 0.2s;
+                height: 2.5rem;
+            }
+            div.st-emotion-cache-1wmy9hl.e1f1d6gn0{
+                width: 325px;
+                height: 470px;
+                background-color: #f0f0f0;
+                border: 1px solid #ccc;
+                margin: 20px;
+                padding: 10px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                position: relative;
+                left: 30px;
+                border: 3px solid #73AD21;
+                border-radius: 2rem;
+                margin-top: 90px;
+            }
+            .st-bo{
+                width: 300px;
+            }
+            .st-emotion-cache-10trblm{
+                font-size: 25px;
+                text-align: center;
+                margin-right: 20px;
+            }
+            .st-emotion-cache-1vbkxwb p{
+                font-size: 12px;
+                text-align: center;
+            }
+            button.st-emotion-cache-7ym5gk.ef3psqc12{
+                height: 1px;
+            }
+            .st-gw{
+                height: auto;
+                width: 300px;
+            }
+            .st-h9{
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
 
         email = st.text_input("Email Address")
         password = st.text_input("Password", type="password")
 
-        login_button_clicked = st.button("LOGIN", key="login_button")
-        reset_button_clicked = st.button("Forgot Password", key="reset_button")
+        login_attempted = False
+
+        # Create login button
+        login_button = st.button("LOGIN", on_click=lambda: login_callback(email, password))
+
+        if login_button and not login_attempted:
+            # Set flag to True to indicate login attempt
+            login_attempted = True
+
+
+        if st.button("Forgot Password"):
+            send_password_reset_email(email)
 
         # Create a sign-up button with error handling
         if st.button("Sign Up"):
@@ -626,20 +650,7 @@ def main():
             else:
                 signup(email, password)
 
-        if login_button_clicked:
-            if email and password:
-                user = authenticate(email, password)
-                if user:
-                    st.session_state.user = user
-                    st.toast("Login successful.")
-                    time.sleep(1)
-            else:
-                st.toast("Please enter both email and password.")
-                time.sleep(2)
-        if reset_button_clicked:
-            send_password_reset_email(email)
-
-     else:
+    else:
         st.sidebar.image("static/ccs.png", use_column_width=True)
 
         with open('style.css') as f:
