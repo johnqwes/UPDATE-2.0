@@ -68,6 +68,7 @@ class forecasting_regressor(BaseEstimator, RegressorMixin):
 st.set_page_config(page_title="LU Student Trend", page_icon=":bar_chart:", layout="wide")
 
 DATA_FILE = 'data.csv'
+UPLOADED_FILE_PATH = 'uploaded_data.csv'
 MODEL_FILE = 'linear_regression_model.pkl'
 
 # Function to load the model from a pickle file
@@ -219,8 +220,8 @@ def get_img_as_base64(file):
         data = f.read()
     return base64.b64encode(data).decode()
 
-def save_data(data):
-    data.to_csv(DATA_FILE, index=False)
+def save_data(data, file_path=UPLOADED_FILE_PATH):
+    data.to_csv(file_path, index=False, encoding="ISO-8859-1")
 
 def set_background(background_image_path):
     background_image_ext = 'png'  # Modify the extension if needed
@@ -237,9 +238,8 @@ def set_background(background_image_path):
         unsafe_allow_html=True,
     )
 
-# Function to load and save data
-def load_data():
-    return pd.read_csv(DATA_FILE)
+def load_data(file_path):
+    return pd.read_csv(file_path, encoding="ISO-8859-1")
 
 
 
@@ -346,7 +346,7 @@ def sidebar_bg(side_bg):
     except Exception as e:
         st.error(f"Error: {e}")
     
-side_bg = "static/image1.JPG"
+side_bg = "static/image2.JPG"
 sidebar_bg(side_bg)
     
 # Function to send a password reset email
@@ -525,11 +525,40 @@ def get_current_logged_in_user():
     # This function retrieves the currently logged-in user from Streamlit's session state
     return st.session_state.get('user')
 
-
 # Function to logout user
 def logout():
     # Clear user info from session state
     st.session_state.user = None
+    # Remove token from URL
+    set_user_token('')
+    st.toast("Logged out successfully.")
+
+# Function to set user token in URL query parameters
+def set_user_token(user_token):
+    current_url = st.experimental_get_query_params()
+    current_url['token'] = user_token
+    st.experimental_set_query_params(**current_url)
+
+# Function to retrieve user token from URL query parameters
+def get_user_token():
+    params = st.experimental_get_query_params()
+    return params.get('token')
+
+# Placeholder function for verifying user token (replace with your actual implementation)
+def verify_token(user_token):
+    # Placeholder logic, always returns True
+    return True
+
+# Placeholder function for decoding user token (replace with your actual implementation)
+def decode_user_token(user_token):
+    # Placeholder logic, token directly contains user information
+    return {"user_id": user_token}  # Placeholder user object
+
+def get_user_from_token(user_token):
+    # Here you would implement logic to retrieve user information based on the token
+    user = decode_user_token(user_token)
+    return user
+
 
 def login_callback(email, password):
     if not email or not password:
@@ -539,18 +568,26 @@ def login_callback(email, password):
     user = authenticate(email, password)
     if user:
         st.session_state.user = user
+        set_user_token('some_unique_token')  # Set user token in URL
         st.success("Login successful.")
         time.sleep(1)
     else:
         st.toast("Invalid email or password.")
 
 def main():
-    background_image_path = "static/image.jpg"  # Adjust the path accordingly
-    set_background(background_image_path)
-
     # Create a session state object
     if 'user' not in st.session_state:
         st.session_state.user = None
+
+    user_token = get_user_token()  # Retrieve user token from URL
+
+    if user_token and st.session_state.user is None:
+        # Token exists in URL but user session is not set, verify token
+        if verify_token(user_token):  # You need to implement verify_token function
+            st.session_state.user = get_user_from_token(user_token)  # You need to implement this function
+        else:
+            st.warning("Invalid or expired token. Please log in again.")
+            set_user_token('')  # Remove token from URL
 
     if st.session_state.user is None:
         st.markdown("<h1 style=' color: #545454;'>LOGIN</h1>", unsafe_allow_html=True)
@@ -660,177 +697,170 @@ def main():
         st.sidebar.header("✅ WELCOME TO LU STUDENT TREND")
         st.sidebar.header("")
         
+        # Initialize session state for uploaded file
+        if 'uploaded_file' not in st.session_state:
+            st.session_state.uploaded_file = None
+
+        # Sidebar for navigation
         tabs = st.sidebar.radio("SELECT TAB:", ["📊 Dashboard", ":chart_with_upwards_trend: Enrollment", ":chart_with_downwards_trend: Dropout", "🎓 Graduate", "🆕 Manage Data", "👤 Account"])
 
 
-        data = pd.read_csv('data.csv')
-        data = data.dropna()
+        if os.path.exists(UPLOADED_FILE_PATH):
+            df = load_data(UPLOADED_FILE_PATH)
+        else:
+            df = load_data(DATA_FILE)
 
         if tabs == "📊 Dashboard":
-                
-                st.markdown("<h1 style='color: #E97451;'>📊 Student Trend Dashboard</h1>", unsafe_allow_html=True)
-                st.markdown("")   
+            st.markdown("<h1 style='color: #E97451;'>📊 Student Trend Dashboard</h1>", unsafe_allow_html=True)
+            st.markdown("")   
 
-                fl = st.file_uploader(" UPLOAD A FILE", type=["csv"])
+            fl = st.file_uploader("UPLOAD A FILE", type=["csv"])
 
-                if fl is not None:
-                    # Read the contents of the uploaded file as bytes
-                    file_contents = fl.getvalue()
+            if fl is not None:
+                # Read the contents of the uploaded file as bytes
+                file_contents = fl.getvalue()
 
-                    # Decode bytes to string assuming it's a CSV file (change encoding if necessary)
-                    stringio = io.StringIO(file_contents.decode("ISO-8859-1"))
+                # Decode bytes to string assuming it's a CSV file (change encoding if necessary)
+                stringio = io.StringIO(file_contents.decode("ISO-8859-1"))
 
-                    # Use Pandas to read the string as a CSV
-                    df = pd.read_csv(stringio)
-                    st.write(df)  # Display the DataFrame in Streamlit
-                else:
-                    df = pd.read_csv("v_data.csv", encoding="ISO-8859-1")
+                # Use Pandas to read the string as a CSV
+                df = pd.read_csv(stringio)
+                st.write(df)  # Display the DataFrame in Streamlit
 
-                col1, col2 = st.columns((2))
+                # Save the uploaded data to the file path
+                save_data(df, UPLOADED_FILE_PATH)
 
-                st.header("⭐ Choose your filter: ")
-                # Create for Program
-                program = st.multiselect("Select Program:", df["Program Name"].unique())
-                if not program:
-                    df2 = df.copy()
-                else:
-                    df2 = df[df["Program Name"].isin(program)]
+                # Update session state
+                st.session_state.uploaded_file = df
 
-                # Create for Year
-                year = st.multiselect("Select School Year:", df2["School Year"].unique())
-                if not year:
-                    df3 = df2.copy()
-                else:
-                    df3 = df2[df2["School Year"].isin(year)]
+            col1, col2 = st.columns((2))
 
-                # Filter the data based on Region, State and City
+            st.header("⭐ Choose your filter: ")
+            # Create filter for Program
+            program = st.multiselect("Select Program:", df["Program Name"].unique())
+            if not program:
+                df2 = df.copy()
+            else:
+                df2 = df[df["Program Name"].isin(program)]
 
-                if not program:
-                    filtered_df = df
-                elif not year:
-                    filtered_df = df[df["Program Name"].isin(program)]
-                elif not program:
-                    filtered_df = df[df["School Year"].isin(year)]
-                elif year:
-                    filtered_df = df3[df["School Year"].isin(year)]
-                elif program:
-                    filtered_df = df3[df["Program Name"].isin(program)]
-                elif program and year:
-                    filtered_df = df3[df["Program Name"].isin(program) & df3["School Year"].isin(year)]
-                else:
-                    filtered_df = df3[df3["Program Name"].isin(program) & df3["School Year"].isin(year)]
+            # Create filter for Year
+            year = st.multiselect("Select School Year:", df2["School Year"].unique())
+            if not year:
+                df3 = df2.copy()
+            else:
+                df3 = df2[df2["School Year"].isin(year)]
 
-                program_df = filtered_df.groupby(by = ["Program Name"], as_index = False)["Number of Enrollees"].sum()
+            # Filter the data based on selected filters
+            filtered_df = df3.copy()
 
-                program_df_sorted = program_df.sort_values(by="Number of Enrollees", ascending=False)
+            program_df = filtered_df.groupby(by=["Program Name"], as_index=False)["Number of Enrollees"].sum()
+            program_df_sorted = program_df.sort_values(by="Number of Enrollees", ascending=False)
 
-                # Select top 5 programs
-                top_5_programs = program_df_sorted.head(5)
+            # Select top 5 programs
+            top_5_programs = program_df_sorted.head(5)
 
-                # Generate bar chart for top 5 programs
-                fig_enrollment = px.bar(
-                    top_5_programs,
-                    x="Program Name",
-                    y="Number of Enrollees",
-                    text=['{:,.0f}'.format(x) for x in top_5_programs["Number of Enrollees"]],
-                    template="plotly_dark",
-                    labels={"Number of Enrollees": "Number of Enrollees"},
-                    color="Number of Enrollees",
-                    color_continuous_scale=px.colors.sequential.Viridis,
-                )
+            # Generate bar chart for top 5 programs
+            fig_enrollment = px.bar(
+                top_5_programs,
+                x="Program Name",
+                y="Number of Enrollees",
+                text=['{:,.0f}'.format(x) for x in top_5_programs["Number of Enrollees"]],
+                template="plotly_dark",
+                labels={"Number of Enrollees": "Number of Enrollees"},
+                color="Number of Enrollees",
+                color_continuous_scale=px.colors.sequential.Viridis,
+            )
 
-                fig_enrollment.update_traces(textposition='outside')
-                fig_enrollment.update_layout(
-                    xaxis_title='Program',
-                    yaxis_title='Number of Enrollees',
-                    showlegend=False,
-                    plot_bgcolor='#FFF',
-                    paper_bgcolor='#fff',
-                    height=500,
-                )
-                st.plotly_chart(fig_enrollment, use_container_width=True)
+            fig_enrollment.update_traces(textposition='outside')
+            fig_enrollment.update_layout(
+                xaxis_title='Program',
+                yaxis_title='Number of Enrollees',
+                showlegend=False,
+                plot_bgcolor='#FFF',
+                paper_bgcolor='#fff',
+                height=500,
+            )
+            st.plotly_chart(fig_enrollment, use_container_width=True)
 
-                # Expander for Dropout data
-                with st.expander("Enrollees Data"):
-                    region = filtered_df.groupby(by="Program Name", as_index=False)["Number of Enrollees"].sum()
-                    region_top5 = region.nlargest(5, "Number of Enrollees")
-                    st.write(region_top5.style.background_gradient(cmap="Oranges"))
-                    csv_dropout = region_top5.to_csv(index=False).encode('utf-8')
-                    st.download_button('Download Enrollees Data', data=csv_dropout, file_name="Enrollees_Data.csv", mime="text/csv")
+            # Expander for Enrollees data
+            with st.expander("Enrollees Data"):
+                region = filtered_df.groupby(by="Program Name", as_index=False)["Number of Enrollees"].sum()
+                region_top5 = region.nlargest(5, "Number of Enrollees")
+                st.write(region_top5.style.background_gradient(cmap="Oranges"))
+                csv_enrollees = region_top5.to_csv(index=False).encode('utf-8')
+                st.download_button('Download Enrollees Data', data=csv_enrollees, file_name="Enrollees_Data.csv", mime="text/csv")
 
-                # Get the top 5 programs for dropout
-                top5_dropout_programs = filtered_df.groupby(by="Program Name", as_index=False)["Number of Dropout"].sum().nlargest(5, "Number of Dropout")["Program Name"]
+            # Get the top 5 programs for dropout
+            top5_dropout_programs = filtered_df.groupby(by="Program Name", as_index=False)["Number of Dropout"].sum().nlargest(5, "Number of Dropout")["Program Name"]
 
-                # Filter the DataFrame to include only the top 5 programs
-                filtered_df_top5_dropout = filtered_df[filtered_df["Program Name"].isin(top5_dropout_programs)]
+            # Filter the DataFrame to include only the top 5 programs
+            filtered_df_top5_dropout = filtered_df[filtered_df["Program Name"].isin(top5_dropout_programs)]
 
-                # Generate a pie chart for dropout distribution
-                st.markdown("<h2 style=' color: #E97451;'>📉 Dropout</h2>", unsafe_allow_html=True)
-                fig_dropout = px.pie(
-                    filtered_df_top5_dropout,
-                    values="Number of Dropout",
-                    names="Program Name",
-                    hole=0.5,
-                    template="plotly_dark",
-                )
+            # Generate a pie chart for dropout distribution
+            st.markdown("<h2 style=' color: #E97451;'>📉 Dropout</h2>", unsafe_allow_html=True)
+            fig_dropout = px.pie(
+                filtered_df_top5_dropout,
+                values="Number of Dropout",
+                names="Program Name",
+                hole=0.5,
+                template="plotly_dark",
+            )
 
-                fig_dropout.update_traces(textposition='outside', textinfo='percent+label')
-                fig_dropout.update_layout(
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                    plot_bgcolor='#FFf',
-                    paper_bgcolor='#fff',
-                    height=500,
-                )
+            fig_dropout.update_traces(textposition='outside', textinfo='percent+label')
+            fig_dropout.update_layout(
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                plot_bgcolor='#FFf',
+                paper_bgcolor='#fff',
+                height=500,
+            )
 
-                st.plotly_chart(fig_dropout, use_container_width=True)
+            st.plotly_chart(fig_dropout, use_container_width=True)
 
-                # Expander for Dropout data
-                with st.expander("Dropout Data"):
-                    region = filtered_df.groupby(by="Program Name", as_index=False)["Number of Dropout"].sum()
-                    region_top5 = region.nlargest(5, "Number of Dropout")
-                    st.write(region_top5.style.background_gradient(cmap="Oranges"))
-                    csv_dropout = region_top5.to_csv(index=False).encode('utf-8')
-                    st.download_button('Download Dropout Data', data=csv_dropout, file_name="Dropout_Data.csv", mime="text/csv")
+            # Expander for Dropout data
+            with st.expander("Dropout Data"):
+                region = filtered_df.groupby(by="Program Name", as_index=False)["Number of Dropout"].sum()
+                region_top5 = region.nlargest(5, "Number of Dropout")
+                st.write(region_top5.style.background_gradient(cmap="Oranges"))
+                csv_dropout = region_top5.to_csv(index=False).encode('utf-8')
+                st.download_button('Download Dropout Data', data=csv_dropout, file_name="Dropout_Data.csv", mime="text/csv")
 
-                # Get the top 5 programs for graduates
-                top5_programs = filtered_df.groupby(by="Program Name", as_index=False)["Number of Graduates"].sum().nlargest(5, "Number of Graduates")["Program Name"]
+            # Get the top 5 programs for graduates
+            top5_programs = filtered_df.groupby(by="Program Name", as_index=False)["Number of Graduates"].sum().nlargest(5, "Number of Graduates")["Program Name"]
 
-                # Filter the DataFrame to include only the top 5 programs
-                filtered_df_top5 = filtered_df[filtered_df["Program Name"].isin(top5_programs)]
+            # Filter the DataFrame to include only the top 5 programs
+            filtered_df_top5 = filtered_df[filtered_df["Program Name"].isin(top5_programs)]
 
-                # Generate a pie chart for Graduate distribution
-                st.markdown("<h2 style=' color: #E97451;'>🎓 Graduates</h2>", unsafe_allow_html=True)
-                fig_dropout = px.pie(
-                    filtered_df_top5,
-                    values="Number of Graduates",
-                    names="Program Name",
-                    hole=0.5,
-                    template="plotly_dark",
-                )
+            # Generate a pie chart for Graduate distribution
+            st.markdown("<h2 style=' color: #E97451;'>🎓 Graduates</h2>", unsafe_allow_html=True)
+            fig_graduates = px.pie(
+                filtered_df_top5,
+                values="Number of Graduates",
+                names="Program Name",
+                hole=0.5,
+                template="plotly_dark",
+            )
 
-                fig_dropout.update_traces(textposition='outside', textinfo='percent+label')
-                fig_dropout.update_layout(
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                    plot_bgcolor='#FFf',
-                    paper_bgcolor='#fff',
-                    height=500,
-                )
+            fig_graduates.update_traces(textposition='outside', textinfo='percent+label')
+            fig_graduates.update_layout(
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                plot_bgcolor='#FFf',
+                paper_bgcolor='#fff',
+                height=500,
+            )
 
-                st.plotly_chart(fig_dropout, use_container_width=True)
+            st.plotly_chart(fig_graduates, use_container_width=True)
 
-                # Expander for Dropout data
-                with st.expander("Graduates Data"):
-                    region = filtered_df.groupby(by="Program Name", as_index=False)["Number of Graduates"].sum()
-                    region_top5 = region.nlargest(5, "Number of Graduates")
-                    st.write(region_top5.style.background_gradient(cmap="Oranges"))
-                    csv_dropout = region_top5.to_csv(index=False).encode('utf-8')
-                    st.download_button('Download Graduates Data', data=csv_dropout, file_name="Graduates_Data.csv", mime="text/csv")
+            # Expander for Graduates data
+            with st.expander("Graduates Data"):
+                region = filtered_df.groupby(by="Program Name", as_index=False)["Number of Graduates"].sum()
+                region_top5 = region.nlargest(5, "Number of Graduates")
+                st.write(region_top5.style.background_gradient(cmap="Oranges"))
+                csv_graduates = region_top5.to_csv(index=False).encode('utf-8')
+                st.download_button('Download Graduates Data', data=csv_graduates, file_name="Graduates_Data.csv", mime="text/csv")
 
-
-
-                # Download orginal DataSet
-                csv = df.to_csv(index = False).encode('utf-8')
-                st.download_button('Download Data', data = csv, file_name = "Data.csv",mime = "text/csv")
+            # Download original DataSet
+            csv = df.to_csv(index=False).encode('utf-8')
+            st.download_button('Download Data', data=csv, file_name="Data.csv", mime="text/csv")
 
         
         with open('stacked_model.pkl', 'rb') as file:
@@ -841,7 +871,11 @@ def main():
                 st.markdown("<h1 style='color: #E97451;'>📈 Enrollment Prediction</h1>", unsafe_allow_html=True)
                 st.markdown("")
 
-                data = pd.read_csv("data.csv", encoding="ISO-8859-1")
+                # Use the uploaded file if it exists, otherwise fall back to the default data file
+                if os.path.exists(UPLOADED_FILE_PATH):
+                    data = load_data(UPLOADED_FILE_PATH)
+                else:
+                    data = load_data(DATA_FILE)
 
                 fl = st.file_uploader("UPLOAD A FILE", type=["csv"])
 
@@ -856,8 +890,7 @@ def main():
 
                         # Use Pandas to read the string as a CSV
                         uploaded_data = pd.read_csv(stringio)
-                        st.write(uploaded_data)  # Display the uploaded DataFrame in Streamlit
-
+                        
                         # Check if the uploaded CSV has the required columns for predictions
                         required_columns = ['School Year', 'Program ID', 'Number of Enrollees']  # Adjust column names as needed
                         if all(col in uploaded_data.columns for col in required_columns):
@@ -866,22 +899,21 @@ def main():
                             correct_data_types = all(uploaded_data[col].dtype in ['int64', 'float64'] for col in numeric_columns)
                             
                             if correct_data_types:
+                                # Save the uploaded file to disk
+                                uploaded_data.to_csv(UPLOADED_FILE_PATH, index=False, encoding="ISO-8859-1")
                                 data = uploaded_data  # Update 'data' if columns and data types match the required structure
+                                st.success("✅ Data file has been successfully uploaded and loaded.")
                             else:
                                 st.warning("⚠️ Please upload a CSV file with numeric columns for predictions.")
                         else:
-                            st.warning("⚠️ Please upload a valid file format")
-
-
-
-                st.sidebar.header("⭐ Predict Enrollees")
+                            st.warning("⚠️ Please upload a valid file format with the required columns: 'School Year', 'Program ID', 'Number of Enrollees'.")
 
                 with st.expander("VIEW DATA"):
                     # Replace commas in every column
                     data_no_commas = data.applymap(lambda x: str(x).replace(',', ''))
 
                     # Display the DataFrame
-                    st.write(data_no_commas, format="csv", index=False)
+                    st.write(data_no_commas)
 
                     # Download button for the original CSV data
                     csv_data = data.to_csv(index=False).encode('utf-8')
@@ -1028,7 +1060,9 @@ def main():
                         st.plotly_chart(fig)
 
 
-                        # Checking for significant growth or decrease based on predictions compared to the latest data
+                        # Initialize latest_value outside the conditional block
+                        latest_value = None
+
                         if original_value is None:
                             latest_value = filtered_data['Number of Enrollees'].iloc[-1]  # Fetching the latest value from the data
 
@@ -1052,7 +1086,7 @@ def main():
                                 show_decrease_recommendation = True
                             else:
                                 decrease_report = "The predicted Enrollees increased compared to the latest data."
-                                show_decrease_recommendation = False                       
+                                show_decrease_recommendation = False                    
 
                             # Checking for growth to show recommendation button
                             if show_growth_recommendation:
@@ -1127,7 +1161,10 @@ def main():
                 st.markdown("<h1 style='color: #E97451;'>📉 Dropout Prediction</h1>", unsafe_allow_html=True)
                 st.markdown("")   
 
-                data = pd.read_csv("data.csv", encoding="ISO-8859-1")
+                if os.path.exists(UPLOADED_FILE_PATH):
+                        data = load_data(UPLOADED_FILE_PATH)
+                else:
+                    data = load_data(DATA_FILE)
 
                 fl = st.file_uploader("UPLOAD A FILE", type=["csv"])
 
@@ -1142,7 +1179,6 @@ def main():
 
                         # Use Pandas to read the string as a CSV
                         uploaded_data = pd.read_csv(stringio)
-                        st.write(uploaded_data)  # Display the uploaded DataFrame in Streamlit
 
                         # Check if the uploaded CSV has the required columns for predictions
                         required_columns = ['School Year', 'Program ID', 'Number of Enrollees']  # Adjust column names as needed
@@ -1395,64 +1431,80 @@ def main():
             stacked_model = pickle.load(file)
 
             if tabs == "🎓 Graduate":
+                st.markdown("<h1 style='color: #E97451;'>🎓 Graduate Prediction</h1>", unsafe_allow_html=True)
+                st.markdown("")
 
-                    st.markdown("<h1 style='color: #E97451;'>🎓 Graduate Prediction</h1>", unsafe_allow_html=True)
-                    st.markdown("")
+                if os.path.exists(UPLOADED_FILE_PATH):
+                    data = load_data(UPLOADED_FILE_PATH)
+                else:
+                    data = load_data(DATA_FILE)
 
-                    data = pd.read_csv("data.csv", encoding="ISO-8859-1")
-                    fl = st.file_uploader("UPLOAD A FILE", type=["csv"])
+                fl = st.file_uploader("UPLOAD A FILE", type=["csv"])
 
-                    if fl is not None:
-                        # Check if the uploaded file is a CSV
-                        if fl.type == 'text/csv':
-                            # Read the contents of the uploaded file as bytes
-                            file_contents = fl.getvalue()
+                if fl is not None:
+                    # Check if the uploaded file is a CSV
+                    if fl.type == 'text/csv':
+                        # Read the contents of the uploaded file as bytes
+                        file_contents = fl.getvalue()
 
-                            # Decode bytes to string assuming it's a CSV file (change encoding if necessary)
-                            stringio = io.StringIO(file_contents.decode("ISO-8859-1"))
+                        # Decode bytes to string assuming it's a CSV file (change encoding if necessary)
+                        stringio = io.StringIO(file_contents.decode("ISO-8859-1"))
 
-                            # Use Pandas to read the string as a CSV
-                            uploaded_data = pd.read_csv(stringio)
-                            st.write(uploaded_data)  # Display the uploaded DataFrame in Streamlit
+                        # Use Pandas to read the string as a CSV
+                        uploaded_data = pd.read_csv(stringio)
 
-                            # Check if the uploaded CSV has the required columns for predictions
-                            required_columns = ['School Year', 'Program ID', 'Number of Enrollees']  # Adjust column names as needed
-                            if all(col in uploaded_data.columns for col in required_columns):
-                                # Check column data types for numeric columns
-                                numeric_columns = ['School Year', 'Program ID', 'Number of Enrollees']  # Adjust numeric column names
-                                correct_data_types = all(uploaded_data[col].dtype in ['int64', 'float64'] for col in numeric_columns)
-                                
-                                if correct_data_types:
-                                    data = uploaded_data  # Update 'data' if columns and data types match the required structure
-                                else:
-                                    st.warning("⚠️ Please upload a CSV file with numeric columns for predictions.")
+                        # Check if the uploaded CSV has the required columns for predictions
+                        required_columns = ['School Year', 'Program ID', 'Number of Enrollees']  # Adjust column names as needed
+                        if all(col in uploaded_data.columns for col in required_columns):
+                            # Check column data types for numeric columns
+                            numeric_columns = ['School Year', 'Program ID', 'Number of Enrollees']  # Adjust numeric column names
+                            correct_data_types = all(uploaded_data[col].dtype in ['int64', 'float64'] for col in numeric_columns)
+
+                            if correct_data_types:
+                                data = uploaded_data  # Update 'data' if columns and data types match the required structure
                             else:
-                                st.warning("⚠️ Please upload a valid file format")
+                                st.warning("⚠️ Please upload a CSV file with numeric columns for predictions.")
+                        else:
+                            st.warning("⚠️ Please upload a valid file format")
 
-                    st.sidebar.header("⭐ Predict Graduate")
+                st.sidebar.header("⭐ Predict Graduate")
 
-                    with st.expander("VIEW DATA"):
-                        # Replace commas in every column
-                        data_no_commas = data.applymap(lambda x: str(x).replace(',', ''))
+                with st.expander("VIEW DATA"):
+                    # Replace commas in every column
+                    data_no_commas = data.applymap(lambda x: str(x).replace(',', ''))
 
-                        # Display the DataFrame
-                        st.write(data_no_commas, format="csv", index=False)
+                    # Display the DataFrame
+                    st.write(data_no_commas, format="csv", index=False)
 
-                        # Download button for the original CSV data
-                        csv_data = data.to_csv(index=False).encode('utf-8')
-                        st.download_button(label="Download CSV", data=csv_data, file_name='data.csv', mime='text/csv')
+                    # Download button for the original CSV data
+                    csv_data = data.to_csv(index=False).encode('utf-8')
+                    st.download_button(label="Download CSV", data=csv_data, file_name='data.csv', mime='text/csv')
 
-                        # Button to trigger retraining for the graduation model
-                        if st.button('Retrain Data'):
-                            grad_model = retrain_grad_model(data, grad_model_filename)
-                            if grad_model:
-                                st.write('Data retrained successfully!')
-                            else:
-                                st.write('Failed to retrain the data. Model file not found!')
+                    # Button to trigger retraining for the graduation model
+                    if st.button('Retrain Data'):
+                        grad_model = retrain_grad_model(data, grad_model_filename)
+                        if grad_model:
+                            st.write('Data retrained successfully!')
+                        else:
+                            st.write('Failed to retrain the data. Model file not found!')
         
                     sy_input = st.sidebar.number_input("Enter the year: ", step=1)
                     id_input = st.sidebar.selectbox("Select Program ID: ", data['Program ID'].unique())
-                    en_input = st.sidebar.number_input("Enter no. of Enrollees: ", step=1)
+
+                    # Fetch enrollees based on the input year and program ID
+                    if sy_input in data['School Year'].values:
+                        en_input = data.loc[(data['School Year'] == sy_input) & (data['Program ID'] == id_input), 'Number of Enrollees'].values
+                        if len(en_input) > 0:
+                            en_input = en_input[0]
+                        else:
+                            latest_year = data[data['Program ID'] == id_input]['School Year'].max()
+                            en_input = data.loc[(data['School Year'] == latest_year) & (data['Program ID'] == id_input), 'Number of Enrollees'].values[0]
+                    else:
+                        latest_year = data[data['Program ID'] == id_input]['School Year'].max()
+                        en_input = data.loc[(data['School Year'] == latest_year) & (data['Program ID'] == id_input), 'Number of Enrollees'].values[0]
+
+                    # Display the number of enrollees in the sidebar
+                    st.sidebar.number_input("Enter no. of Enrollees: ", value=en_input, step=1, key="en_input")
 
                     fig = go.Figure()
                     prediction_text = ""
@@ -1463,199 +1515,207 @@ def main():
                         user_data = [[sy_input, id_input, en_input]]
                         predictions = stacked_model.predict(user_data)
 
+                        # Calculate noise scale
+                        noise_scale = 2 + 0.1 * (sy_input - max(data['School Year']))
+                        noise_scale = max(noise_scale, 0)
+                        noise = np.random.normal(loc=0, scale=noise_scale)
+                        noisy_prediction = predictions[0] + noise
+
+
+                        # Assuming filtered_data contains only the data for the selected Program ID
                         filtered_data = data[data['Program ID'] == id_input]
 
-                        fig.add_trace(go.Scatter(
-                            x=filtered_data['School Year'],
-                            y=filtered_data['Number of Graduates'],
-                            mode='markers',
-                            name='Original Data',
-                            marker=dict(color='#FF5733', size=12, line=dict(color='#000000', width=0.5)),
-                            opacity=0.8,
-                            showlegend=True
-                        ))
-
-                        original_value = None
-
-                        if sy_input in filtered_data['School Year'].values:
-                            original_value = filtered_data[filtered_data['School Year'] == sy_input]
-                            fig.add_trace(go.Scatter(
-                                x=[sy_input],
-                                y=[original_value['Number of Graduates'].values[0]],
-                                mode='markers',
-                                name='Original Value',
-                                marker=dict(color='#C70039', size=16, symbol='diamond', line=dict(color='#000000', width=1.5)),
-                            ))
-
-                        if original_value is None:  # Only add a star for years without original data
-                            fig.add_trace(go.Scatter(
-                                x=[sy_input],
-                                y=[predictions[0]],
-                                mode='markers',
-                                name='Predicted Value',
-                                marker=dict(color='#4CAF50', size=16, symbol='star', line=dict(color='#000000', width=1.5)),
-                            ))
-                        else:  # Add the predicted value as well for years with original data
-                            fig.add_trace(go.Scatter(
-                                x=[sy_input],
-                                y=[predictions[0]],
-                                mode='markers',
-                                name='Predicted Value',
-                                marker=dict(color='#4CAF50', size=16, symbol='circle', line=dict(color='#000000', width=1.5)),
-                            ))
-
-                        # Adding a trend line based on historical data if enough data points are available
-                        if len(filtered_data) > 1:
-                            x = filtered_data['School Year'].values.reshape(-1, 1)
-                            y = filtered_data['Number of Graduates'].values
-                            model = LinearRegression().fit(x, y)
-                            trend_line = model.predict(x)
+                        if len(filtered_data) > 0:
+                            # Display original data
                             fig.add_trace(go.Scatter(
                                 x=filtered_data['School Year'],
-                                y=trend_line,
-                                mode='lines',
-                                name='Trend Line',
-                                line=dict(color='#00FFFF', width=3),
+                                y=filtered_data['Number of Graduates'],
+                                mode='markers',
+                                name='Original Data',
+                                marker=dict(color='#FF5733', size=12, line=dict(color='#000000', width=0.5)),
+                                opacity=0.8,
+                                showlegend=True
                             ))
 
-                        # Predict and display values for years with no original data up to the predicted year
-                        earliest_year = filtered_data['School Year'].min()
-                        for year in range(earliest_year, sy_input):
-                            if year not in filtered_data['School Year'].values:
-                                predicted_value = stacked_model.predict([[year, id_input, en_input]])[0]
-                                predicted_value = round(predicted_value)
+                            original_value = None  # Initialize original_value here
 
+                            # Check if original value exists for the input year
+                            if sy_input in filtered_data['School Year'].values:
+                                original_value = filtered_data[filtered_data['School Year'] == sy_input]
                                 fig.add_trace(go.Scatter(
-                                    x=[year],
-                                    y=[predicted_value],
+                                    x=[sy_input],
+                                    y=[original_value['Number of Graduates'].values[0]],
                                     mode='markers',
-                                    name=f'Predicted Value ({year})',
-                                    marker=dict(color='#4CAF50', size=16, symbol='star', line=dict(color='#000000', width=1.5)),
+                                    name='Original Value',
+                                    marker=dict(color='#C70039', size=16, symbol='diamond', line=dict(color='#000000', width=1.5)),
+                                ))
+                            else:
+                                original_value = None
+
+
+
+                            # Predict and display values for 2023 to user-input year
+                            if sy_input >= 2023:
+                                for year in range(2023, sy_input + 1):
+                                    noisy_prediction = stacked_model.predict([[year, id_input, en_input]])[0]
+                                    noise_scale = 20 + 0.1 * (year - data['School Year'].max())
+                                    noise = np.random.normal(loc=0, scale=noise_scale)
+                                    noisy_prediction += noise
+                                    noisy_prediction = round(noisy_prediction)
+
+                                    # Check if there's an original value for the current year
+                                    original_value_available = (year in filtered_data['School Year'].values)
+
+                                    # Add scatter plot for predicted value only if no original value exists
+                                    if not original_value_available:
+                                        fig.add_trace(go.Scatter(
+                                            x=[year],
+                                            y=[noisy_prediction],
+                                            mode='markers',
+                                            name=f'Predicted Value ({year})',
+                                            marker=dict(color='#4CAF50', size=16, symbol='star', line=dict(color='#000000', width=1.5)),
+                                        ))
+
+                            # Adding a trend line based on historical data if enough data points are available
+                            if len(filtered_data) > 1:
+                                x = filtered_data['School Year'].values.reshape(-1, 1)
+                                y = filtered_data['Number of Graduates'].values
+                                model = LinearRegression().fit(x, y)
+                                trend_line = model.predict(x)
+                                fig.add_trace(go.Scatter(
+                                    x=filtered_data['School Year'],
+                                    y=trend_line,
+                                    mode='lines',
+                                    name='Trend Line',
+                                    line=dict(color='#00FFFF', width=3),
                                 ))
 
-                        fig.update_layout(
-                            title_text='Graduate Prediction',
-                            title_font=dict(size=28, family='Arial, sans-serif', color='#333333'),
-                            title_x=0.33,  # Centers the title horizontally
-                            title_y=0.95,  # Adjusts the vertical position of the title
-                            xaxis=dict(title='School Year', tickfont=dict(size=14, color='#333333')),
-                            yaxis=dict(title='Number of Graduates', tickfont=dict(size=14, color='#333333')),
-                            showlegend=True,
-                            legend=dict(
-                                x=0,
-                                y=1,
-                                traceorder="normal",
-                                font=dict(family="Arial, sans-serif", size=14, color="#333333"),
-                                bgcolor="#f7f7f7",
-                                bordercolor="#333333",
-                                borderwidth=1
-                            ),
-                            hovermode='closest',
-                            plot_bgcolor='#f0f0f0',  # Background color of the plot
-                            paper_bgcolor='#ffffff',  # Background color of the paper/plot area
-                            width=800,  # Adjust the width of the plot
-                            height=600,  # Adjust the height of the plot
-                            margin=dict(l=80, r=80, t=100, b=80),  # Adjust margins for better display
-                            transition={'duration': 1000}  # Add smooth transition/animation
-                        )
-                        prediction_text = f"Predicted Value: {round(predictions[0])}"
-                        if original_value is not None:
-                            original_text = f"Original Value: {original_value['Number of Graduates'].values[0]}"
+                            fig.update_layout(
+                                title_text='Graduate Prediction',
+                                title_font=dict(size=28, family='Arial, sans-serif', color='#333333'),
+                                title_x=0.33,  # Centers the title horizontally
+                                title_y=0.95,  # Adjusts the vertical position of the title
+                                xaxis=dict(title='School Year', tickfont=dict(size=14, color='#333333')),
+                                yaxis=dict(title='Number of Graduates', tickfont=dict(size=14, color='#333333')),
+                                showlegend=True,
+                                legend=dict(
+                                    x=0,
+                                    y=1,
+                                    traceorder="normal",
+                                    font=dict(family="Arial, sans-serif", size=14, color="#333333"),
+                                    bgcolor="#f7f7f7",
+                                    bordercolor="#333333",
+                                    borderwidth=1
+                                ),
+                                hovermode='closest',
+                                plot_bgcolor='#f0f0f0',  # Background color of the plot
+                                paper_bgcolor='#ffffff',  # Background color of the paper/plot area
+                                width=800,  # Adjust the width of the plot
+                                height=600,  # Adjust the height of the plot
+                                margin=dict(l=80, r=80, t=100, b=80),  # Adjust margins for better display
+                                transition={'duration': 1000}  # Add smooth transition/animation
+                            )
+                            prediction_text = f"Predicted Value: {round(noisy_prediction)}"
+                            if original_value is not None:
+                                original_text = f"Original Value: {int(original_value['Number of Graduates'].values[0])}"
 
-                        styled_prediction_text = f"<div style='padding: 20px; border-radius: 50px; margin-bottom: 30px; background: linear-gradient(135deg, #50C878, #458B74, #006400); color: #FFF; text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 15px 15px rgba(0, 0, 0, 0.3); animation: rotate-scale 3s ease-in-out infinite, neon-glow 2s linear infinite;'><font size='+6'>{prediction_text}</font></div>"
-                        styled_original_text = f"<div style='padding: 20px; border-radius: 50px; margin-bottom: 30px; color: #006400; animation: rotate-scale 3s ease-in-out infinite, neon-glow 2s linear infinite;'><font size='+6'>{original_text}</font></div>"
+                            styled_prediction_text = f"<div style='padding: 20px; border-radius: 50px; margin-bottom: 30px; background: linear-gradient(135deg, #50C878, #458B74, #006400); color: #FFF; text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 15px 15px rgba(0, 0, 0, 0.3); animation: rotate-scale 3s ease-in-out infinite, neon-glow 2s linear infinite;'><font size='+6'>{prediction_text}</font></div>"
+                            styled_original_text = f"<div style='padding: 20px; border-radius: 50px; margin-bottom: 30px; color: #006400; animation: rotate-scale 3s ease-in-out infinite, neon-glow 2s linear infinite;'><font size='+6'>{original_text}</font></div>"
 
-                        st.markdown(styled_prediction_text, unsafe_allow_html=True)
-                        st.markdown(styled_original_text, unsafe_allow_html=True)
+                            st.markdown(styled_prediction_text, unsafe_allow_html=True)
+                            st.markdown(styled_original_text, unsafe_allow_html=True)
 
-                        # Checking for significant growth or decrease based on predictions compared to the latest data
-                        if original_value is None:
-                            latest_value = filtered_data['Number of Graduates'].iloc[-1]  # Fetching the latest value from the data
+                            st.plotly_chart(fig)
 
-                            # Rounding off the values to whole numbers
-                            latest_value = round(latest_value)
-                            predictions[0] = max(round(predictions[0]), 0)
+                            # Initialize latest_value outside of the conditional block
+                            latest_value = None
 
-                        st.plotly_chart(fig)
+                            # Checking if original_value is None to determine if latest_value should be assigned
+                            if original_value is None:
+                                latest_value = filtered_data['Number of Enrollees'].iloc[-1]  # Fetching the latest value from the data
 
-                        # Checking if the predicted value indicates growth compared to the latest data
-                        if original_value is None:
-                            if predictions[0] > latest_value:
-                                growth_amount = predictions[0] - latest_value
-                                growth_report = f"The predicted Graduates increased by {int(growth_amount)} compared to the latest data."
-                                show_growth_recommendation = True
-                            else:
-                                growth_report = "The predicted Graduates decreased compared to the latest data."
-                                show_growth_recommendation = False
+                                # Rounding off the values to whole numbers
+                                latest_value = round(latest_value)
+                                noisy_prediction = max(round(noisy_prediction), 0)
 
+                            # Now, check if latest_value is not None before comparing it with noisy_prediction
+                            if latest_value is not None:
+                                # Checking if the predicted value indicates growth compared to the latest data
+                                if noisy_prediction > latest_value:
+                                    growth_amount = noisy_prediction - latest_value
+                                    growth_report = f"The predicted Enrollees increased by {int(growth_amount)} compared to the latest data."
+                                    show_growth_recommendation = True
+                                else:
+                                    growth_report = "The predicted Enrollees decreased compared to the latest data."
+                                    show_growth_recommendation = False
 
-                            # Checking if the predicted value indicates decrease compared to the latest data
-                            if predictions[0] < latest_value:
-                                decrease_amount = latest_value - predictions[0]
-                                decrease_report = f"The predicted Graduates decreased by {int(decrease_amount)} compared to the latest data."
-                                show_decrease_recommendation = True
-                            else:
-                                decrease_report = "The predicted Graduates increased compared to the latest data."
-                                show_decrease_recommendation = False                       
+                                # Checking if the predicted value indicates decrease compared to the latest data
+                                if noisy_prediction < latest_value:
+                                    decrease_amount = latest_value - noisy_prediction
+                                    decrease_report = f"The predicted Enrollees decreased by {int(decrease_amount)} compared to the latest data."
+                                    show_decrease_recommendation = True
+                                else:
+                                    decrease_report = "The predicted Enrollees increased compared to the latest data."
+                                    show_decrease_recommendation = False                       
 
-                            # Checking for growth to show recommendation button
-                            if show_growth_recommendation:
-                                col1, col2, col3 = st.columns([1, 6, 1])
-                                with col2:
+                                # Checking for growth to show recommendation button
+                                if show_growth_recommendation:
+                                    col1, col2, col3 = st.columns([1, 6, 1])
+                                    with col2:
 
-                                        st.markdown("""
-                                            <div style='color: white; font-family: Arial, sans-serif;'>
-                                                <div style='margin-bottom: 10px;'>
-                                                    <div style='background-color: #2E8B57; padding: 20px; border-radius: 30px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);'>
-                                                        <p>{growth_report}</p>
+                                            st.markdown("""
+                                                <div style='color: white; font-family: Arial, sans-serif;'>
+                                                    <div style='margin-bottom: 10px;'>
+                                                        <div style='background-color: #2E8B57; padding: 20px; border-radius: 30px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);'>
+                                                            <p>{growth_report}</p>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        """.format(growth_report=growth_report), unsafe_allow_html=True)
-                                        st.markdown("""
-                                        <div style='color: #fff; font-family: Arial, sans-serif;'>
-                                            <div style='background-color: #2E8B57; padding: 30px; border-radius: 30px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);'>
-                                                    <h2 style='margin-bottom: 20px;'>Recommendation for Handling Increase in Graduates:</h2>
-                                                    <ul style='list-style-type: none; padding-left: 0;'>
-                                                        <li style='margin-bottom: 10px;'>✤ Expand resources and programs to support increased graduation requirements.</li>
-                                                        <li style='margin-bottom: 10px;'>✤ Provide additional academic support and counseling services to ensure student success.</li>
-                                                        <li style='margin-bottom: 10px;'>✤ Develop career-oriented workshops and mentorship programs to aid in post-graduation plans.</li>
-                                                        <li style='margin-bottom: 10px;'>✤ Enhance collaboration with industries for internship opportunities and practical experience.</li>
-                                                        <li style='margin-bottom: 10px;'>✤ Evaluate and adapt curriculum to align with evolving job market demands.</li>
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        """, unsafe_allow_html=True)
-
-
-                            # Checking for decrease to show recommendation button
-                            if show_decrease_recommendation:
-                                col1, col2, col3 = st.columns([1, 6, 1])
-                                with col2:
-
-                                        st.markdown("""
-                                            <div style='color: white; font-family: Arial, sans-serif;'>
-                                                <div style='margin-bottom: 10px;'>
-                                                    <div style='background-color: #2E8B57; padding: 20px; border-radius: 30px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);'>
-                                                        <p>{decrease_report}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        """.format(decrease_report=decrease_report), unsafe_allow_html=True)
-                                        st.markdown("""
+                                            """.format(growth_report=growth_report), unsafe_allow_html=True)
+                                            st.markdown("""
                                             <div style='color: #fff; font-family: Arial, sans-serif;'>
                                                 <div style='background-color: #2E8B57; padding: 30px; border-radius: 30px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);'>
-                                                    <h2 style='margin-bottom: 20px;'>Recommendation for Handling Decrease in Graduates:</h2>
-                                                    <ul style='list-style-type: none; padding-left: 0;'>
-                                                        <li style='margin-bottom: 10px;'>✤ Investigate reasons behind the decrease and address potential issues.</li>
-                                                        <li style='margin-bottom: 10px;'>✤ Offer additional support services to improve graduation rates and retention.</li>
-                                                        <li style='margin-bottom: 10px;'>✤ Reassess curriculum and educational strategies to better meet student needs.</li>
-                                                        <li style='margin-bottom: 10px;'>✤ Strengthen partnerships with industries for job placement and post-graduation opportunities.</li>
-                                                        <li style='margin-bottom: 10px;'>✤ Implement proactive measures to identify and support at-risk students.</li>
-                                                    </ul>
+                                                        <h2 style='margin-bottom: 20px;'>Recommendation for Handling Increase in Graduates:</h2>
+                                                        <ul style='list-style-type: none; padding-left: 0;'>
+                                                            <li style='margin-bottom: 10px;'>✤ Expand resources and programs to support increased graduation requirements.</li>
+                                                            <li style='margin-bottom: 10px;'>✤ Provide additional academic support and counseling services to ensure student success.</li>
+                                                            <li style='margin-bottom: 10px;'>✤ Develop career-oriented workshops and mentorship programs to aid in post-graduation plans.</li>
+                                                            <li style='margin-bottom: 10px;'>✤ Enhance collaboration with industries for internship opportunities and practical experience.</li>
+                                                            <li style='margin-bottom: 10px;'>✤ Evaluate and adapt curriculum to align with evolving job market demands.</li>
+                                                        </ul>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        """, unsafe_allow_html=True)
+                                            """, unsafe_allow_html=True)
+
+
+                                # Checking for decrease to show recommendation button
+                                if show_decrease_recommendation:
+                                    col1, col2, col3 = st.columns([1, 6, 1])
+                                    with col2:
+
+                                            st.markdown("""
+                                                <div style='color: white; font-family: Arial, sans-serif;'>
+                                                    <div style='margin-bottom: 10px;'>
+                                                        <div style='background-color: #2E8B57; padding: 20px; border-radius: 30px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);'>
+                                                            <p>{decrease_report}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            """.format(decrease_report=decrease_report), unsafe_allow_html=True)
+                                            st.markdown("""
+                                                <div style='color: #fff; font-family: Arial, sans-serif;'>
+                                                    <div style='background-color: #2E8B57; padding: 30px; border-radius: 30px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);'>
+                                                        <h2 style='margin-bottom: 20px;'>Recommendation for Handling Decrease in Graduates:</h2>
+                                                        <ul style='list-style-type: none; padding-left: 0;'>
+                                                            <li style='margin-bottom: 10px;'>✤ Investigate reasons behind the decrease and address potential issues.</li>
+                                                            <li style='margin-bottom: 10px;'>✤ Offer additional support services to improve graduation rates and retention.</li>
+                                                            <li style='margin-bottom: 10px;'>✤ Reassess curriculum and educational strategies to better meet student needs.</li>
+                                                            <li style='margin-bottom: 10px;'>✤ Strengthen partnerships with industries for job placement and post-graduation opportunities.</li>
+                                                            <li style='margin-bottom: 10px;'>✤ Implement proactive measures to identify and support at-risk students.</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            """, unsafe_allow_html=True)
 
 
 
@@ -1663,15 +1723,15 @@ def main():
 
 
             if tabs == "🆕 Manage Data":
-                    
-
                     st.markdown("<h1 style='color: #E97451;'>🆕 Add New Program Details</h1>", unsafe_allow_html=True)
                     st.markdown("")
 
-                    operation = ""
-
-       
                     operation = st.selectbox("Select Operation", ["Add New Program", "Add New Data", "Edit Data", "Delete"])
+
+                    if os.path.exists(UPLOADED_FILE_PATH):
+                        data = load_data(UPLOADED_FILE_PATH)
+                    else:
+                        data = load_data(DATA_FILE)
 
                     if operation == "Add New Program":
                         st.subheader("Add New Program")
@@ -1679,54 +1739,37 @@ def main():
                         new_enrollees = st.number_input("Enter Number of Enrollees", min_value=0, step=1, key="enrollees")
                             
                         if st.button("Add Program"):
-                            new_program_id = data['Program ID'].max() + 1
-                            new_year = data['School Year'].max()
-                            # Assuming default values for dropouts and graduates for a new program
+                            new_program_id = data['Program ID'].max() + 1 if not data.empty else 1
+                            new_year = data['School Year'].max() if not data.empty else 2021  # Adjust the initial year as necessary
                             new_dropout = 0
                             new_graduates = 0
                             new_row = {'School Year': new_year, 'Program ID': new_program_id,
                                         'Program Name': new_program_name, 'Number of Enrollees': new_enrollees,
-                                            'Number of Dropout': new_dropout, 'Number of Graduates': new_graduates}
+                                        'Number of Dropout': new_dropout, 'Number of Graduates': new_graduates}
                             data = data.append(new_row, ignore_index=True)
                             save_data(data)
-
-                                # Check if data was added before showing the success message
-                            if len(data) > 0:
-                                st.success("New program added successfully!")
-                                
-                            else:
-                                st.warning("No data added. Please fill in the required fields.")
-
-
+                            st.success("New program added successfully!")
 
                     if operation == "Add New Data":
                         st.subheader("Add New Data")
                         program_id = st.selectbox("Select Program ID", data['Program ID'].unique())
-                        selected_program = data[data['Program ID'] == program_id]['Program Name'].values[0]  # Get the program name for the selected ID
+                        selected_program = data[data['Program ID'] == program_id]['Program Name'].values[0]
                         new_year = st.number_input("Enter School Year", min_value=int(data['School Year'].max() + 1), step=1, key="new_year")
                         new_enrollees = st.number_input("Enter Number of Enrollees", min_value=0, step=1, key="new_enrollees")
                         new_dropout = st.number_input("Enter Number of Dropout", min_value=0, step=1, key="new_dropout")
                         new_graduates = st.number_input("Enter Number of Graduates", min_value=0, step=1, key="new_graduates")
                         if st.button("Save"):
                             new_row = {'School Year': new_year, 'Program ID': program_id,
-                                        'Program Name': selected_program,  # Add the selected program name here
+                                        'Program Name': selected_program,
                                         'Number of Enrollees': new_enrollees, 'Number of Dropout': new_dropout,
                                         'Number of Graduates': new_graduates}
                             data = data.append(new_row, ignore_index=True)
                             save_data(data)
-                            if len(data) > 0:
-                                st.success("New data added successfully!")
-                                
-                            else:
-                                st.warning("No data added. Please fill in the required fields.")
-                                        
+                            st.success("New data added successfully!")
 
-
-                    
                     if operation == "Edit Data":
                         st.subheader("Edit Data")
                         
-                        # Allow users to select the program and school year to edit
                         program_id_to_edit = st.selectbox("Select Program ID to Edit", data['Program ID'].unique())
                         selected_data = data[data['Program ID'] == program_id_to_edit]
                         
@@ -1735,53 +1778,41 @@ def main():
                             selected_year_data = selected_data[selected_data['School Year'] == selected_year_to_edit]
 
                             if not selected_year_data.empty:
-                                # Display the existing data for editing
                                 st.write("Existing Data:")
                                 st.write(selected_year_data)
 
-                                # Allow editing the fields
-                                new_enrollees = st.number_input("Enter New Number of Enrollees", min_value=0, step=1, key="edit_enrollees")
-                                new_dropout = st.number_input("Enter New Number of Dropout", min_value=0, step=1, key="edit_dropout")
-                                new_graduates = st.number_input("Enter New Number of Graduates", min_value=0, step=1, key="edit_graduates")
+                                new_enrollees = st.number_input("Enter New Number of Enrollees", min_value=0, step=1, value=int(selected_year_data['Number of Enrollees'].values[0]), key="edit_enrollees")
+                                new_dropout = st.number_input("Enter New Number of Dropout", min_value=0, step=1, value=int(selected_year_data['Number of Dropout'].values[0]), key="edit_dropout")
+                                new_graduates = st.number_input("Enter New Number of Graduates", min_value=0, step=1, value=int(selected_year_data['Number of Graduates'].values[0]), key="edit_graduates")
 
                                 if st.button("Update Data"):
-                                    # Update the selected data with the new values
                                     data.loc[(data['Program ID'] == program_id_to_edit) & (data['School Year'] == selected_year_to_edit), 'Number of Enrollees'] = new_enrollees
                                     data.loc[(data['Program ID'] == program_id_to_edit) & (data['School Year'] == selected_year_to_edit), 'Number of Dropout'] = new_dropout
                                     data.loc[(data['Program ID'] == program_id_to_edit) & (data['School Year'] == selected_year_to_edit), 'Number of Graduates'] = new_graduates
                                     save_data(data)
                                     st.success("Data updated successfully!")
-
                             else:
                                 st.warning("No data found for the selected School Year.")
                         else:
                             st.warning("No data found for the selected Program ID.")
 
-                    
                     if operation == "Delete":
                         st.subheader("Delete Data")
 
-                        # Create a drop-down selectbox for Program ID
                         program_id_options = data['Program ID'].unique()
                         selected_program_id = st.selectbox("Select Program ID to Delete", program_id_options)
 
                         year_to_delete = st.number_input("Enter School Year to Delete", min_value=int(data['School Year'].min()), step=1, key="delete_year")
 
-                        # Display data of the chosen user ID before deletion
                         st.subheader("Data of Chosen User ID Before Deletion")
                         chosen_user_data = data[(data['Program ID'] == selected_program_id) & (data['School Year'] == year_to_delete)]
                         st.write(chosen_user_data)
 
                         if st.button("Confirm Deletion", key="delete_button"):
-                            # Check if data exists for the specified program ID and school year
-                            # This line filters the data based on the conditions
-                            if ((data['Program ID'] == selected_program_id) & (data['School Year'] == year_to_delete)).any():
-                                # Remove data for the specified program ID and school year
+                            if not chosen_user_data.empty:
                                 data = data[~((data['Program ID'] == selected_program_id) & (data['School Year'] == year_to_delete))]
-                                # Assuming you have a function like save_data(data) to save the DataFrame
                                 save_data(data)
                                 st.success("Data deleted successfully!")
-                                
                             else:
                                 st.warning("No data found for the specified Program ID and School Year.")
            
